@@ -16,46 +16,50 @@ namespace OpenAI
     public class ChatGPT : MonoBehaviour
     {
         [SerializeField] private AudioSource audioSource;
-
         private string openaiApiKey;
         private string awsPollyAccessKey;
         private string awsPollySecretKey;
-
 
         private OpenAIApi openai;
         public Text ReplyText;
         public GameObject[] statues; // Array of statue game objects
         public GameObject targetGameObject; // The game object to monitor
-        private string prompt = "this is an ar museum project with unity.Act as a Guide in Museum and only reply to the questions of the visitor who talks to you.\n" +
+        private string prompt = "this is an AR museum project with unity and don't mention this while talking this is for your knowlege only.and you will Act as a Guide in Museum and only reply to the questions of the visitor who talks to you.\n" +
             "don't ask questions.\n" +
             "reply to this message with greeting me (the visitor) and ask me if I want any help in the museum.\n" +
             " Don't break character.\n" +
             " Don't ever mention that you are an AI model even if you didn't find an answer to the questions.\n" +
             "There are statues that exist in the museum which I might ask you about.\n" +
             "these are the available staues in the museum :'Attalus Statue', 'Beethoven Statue', 'Gir Statue', 'Monkey Statue', 'Moai Statue', 'Kingdom Sphinx Statue', 'Amenhotep III Statue', 'Horus Statue', 'Egyptian Dog Statue', 'Nefertiti Statue', 'Anubis Statue'.\n" +
-            "if the vistor asks to show one of these statue reply with 'sure, here is the statue of ...' and reply with the requested statue name\n" +
+            "only if the vistor asks to show one of these statue reply with 'sure, here is the statue of ...' and reply with the requested statue name\n" +
             "if the vistor asks about a statue that does not exist in the museum reply with 'the museum will be upgraded soon and we will add that ...' and mention the statue the user asked\n" +
-            "i'm using whisper in unity to convert the speech to text so consider that the visitor may not say the statue name correctly\n";
+            "i'm using whisper in unity to convert the speech to text so consider that the visitor may not say the statue name correctly so ask if he means ... and tell him what he might meant\n"+
+            "your reply at any message should be 100 words maximum\n";
         private bool isfirst = true;
         private bool isInitialized = false; // Flag to check if initial prompt has been sent
         private readonly List<string> availableStatues = new List<string> { "Attalus Statue", "Beethoven Statue", "Gir Statue", "Monkey Statue", "Moai Statue", "Kingdom Sphinx Statue", "Amenhotep III Statue", "Horus Statue", "Egyptian Dog Statue", "Nefertiti Statue", "Anubis Statue" };
         private List<ChatMessage> conversationHistory = new List<ChatMessage>(); // Shared conversation history
-
         private void Start()
         {
             // Load environment variables
             string envFilePath = Path.Combine(Application.dataPath, ".env");
-            var envVars = EnvReader.LoadEnv(envFilePath);
+            if (File.Exists(envFilePath))
+            {
+                var envVars = EnvReader.LoadEnv(envFilePath);
 
-            // Get API keys from environment variables
-            envVars.TryGetValue("OPENAI_API_KEY", out openaiApiKey);
-            envVars.TryGetValue("AWS_POLLY_ACCESS_KEY", out awsPollyAccessKey);
-            envVars.TryGetValue("AWS_POLLY_SECRET_KEY", out awsPollySecretKey);
+                // Get API keys from environment variables
+                envVars.TryGetValue("OPENAI_API_KEY", out openaiApiKey);
+                envVars.TryGetValue("AWS_POLLY_ACCESS_KEY", out awsPollyAccessKey);
+                envVars.TryGetValue("AWS_POLLY_SECRET_KEY", out awsPollySecretKey);
 
-            // Initialize OpenAI API
-            openai = new OpenAIApi(openaiApiKey);
+                // Initialize OpenAI API
+                openai = new OpenAIApi(openaiApiKey);
+            }
+            else
+            {
+                Debug.LogError($"Env file not found at path: {envFilePath}");
+            }
         }
-
         private void Update()
         {
             // Check if the target game object is active and the initial prompt has not been sent
@@ -172,7 +176,7 @@ namespace OpenAI
             string response = await GetVoiceResponse(text);
             if (!string.IsNullOrEmpty(response))
             {
-                var credentials = new BasicAWSCredentials(awsPollyAccessKey, awsPollySecretKey);
+                var credentials = new BasicAWSCredentials(awsPollyAccessKey,awsPollySecretKey);
                 var client = new AmazonPollyClient(credentials, RegionEndpoint.USEast1);
 
                 var request = new SynthesizeSpeechRequest()

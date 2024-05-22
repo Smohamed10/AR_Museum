@@ -22,12 +22,12 @@ namespace Samples.Whisper
 
         private readonly string fileName = "output.wav";
         private readonly int duration = 5;
-        private string openaiApiKey;
 
         private AudioClip clip;
         private bool isRecording;
         private float time;
-        private OpenAIApi openai;
+        private OpenAIApi openai ;
+        private string openaiApiKey;
 
         // ChatGPT reference
         public ChatGPT chatGPT;
@@ -36,13 +36,19 @@ namespace Samples.Whisper
         {
             // Load environment variables
             string envFilePath = Path.Combine(Application.dataPath, ".env");
-            var envVars = EnvReader.LoadEnv(envFilePath);
+            if (File.Exists(envFilePath))
+            {
+                var envVars = EnvReader.LoadEnv(envFilePath);
 
-            // Get API keys from environment variables
-            envVars.TryGetValue("OPENAI_API_KEY", out openaiApiKey);
-
-            // Initialize OpenAI API
-            openai = new OpenAIApi(openaiApiKey);
+                // Get API keys from environment variables
+                envVars.TryGetValue("OPENAI_API_KEY", out openaiApiKey);
+                // Initialize OpenAI API
+                openai = new OpenAIApi(openaiApiKey);
+            }
+            else
+            {
+                Debug.LogError($"Env file not found at path: {envFilePath}");
+            }
 
             if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
             {
