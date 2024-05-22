@@ -22,17 +22,28 @@ namespace Samples.Whisper
 
         private readonly string fileName = "output.wav";
         private readonly int duration = 5;
+        private string openaiApiKey;
 
         private AudioClip clip;
         private bool isRecording;
         private float time;
-        private OpenAIApi openai = new OpenAIApi("sk-proj-mBQmGdDd0hehbCMfQrART3BlbkFJa9Uw5USe6As87EI5OgjV");
+        private OpenAIApi openai;
 
         // ChatGPT reference
         public ChatGPT chatGPT;
 
         private void Start()
         {
+            // Load environment variables
+            string envFilePath = Path.Combine(Application.dataPath, ".env");
+            var envVars = EnvReader.LoadEnv(envFilePath);
+
+            // Get API keys from environment variables
+            envVars.TryGetValue("OPENAI_API_KEY", out openaiApiKey);
+
+            // Initialize OpenAI API
+            openai = new OpenAIApi(openaiApiKey);
+
             if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
             {
                 Permission.RequestUserPermission(Permission.Microphone);

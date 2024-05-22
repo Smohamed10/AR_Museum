@@ -17,7 +17,12 @@ namespace OpenAI
     {
         [SerializeField] private AudioSource audioSource;
 
-        private OpenAIApi openai = new OpenAIApi("sk-proj-mBQmGdDd0hehbCMfQrART3BlbkFJa9Uw5USe6As87EI5OgjV");
+        private string openaiApiKey;
+        private string awsPollyAccessKey;
+        private string awsPollySecretKey;
+
+
+        private OpenAIApi openai;
         public Text ReplyText;
         public GameObject[] statues; // Array of statue game objects
         public GameObject targetGameObject; // The game object to monitor
@@ -35,6 +40,21 @@ namespace OpenAI
         private bool isInitialized = false; // Flag to check if initial prompt has been sent
         private readonly List<string> availableStatues = new List<string> { "Attalus Statue", "Beethoven Statue", "Gir Statue", "Monkey Statue", "Moai Statue", "Kingdom Sphinx Statue", "Amenhotep III Statue", "Horus Statue", "Egyptian Dog Statue", "Nefertiti Statue", "Anubis Statue" };
         private List<ChatMessage> conversationHistory = new List<ChatMessage>(); // Shared conversation history
+
+        private void Start()
+        {
+            // Load environment variables
+            string envFilePath = Path.Combine(Application.dataPath, ".env");
+            var envVars = EnvReader.LoadEnv(envFilePath);
+
+            // Get API keys from environment variables
+            envVars.TryGetValue("OPENAI_API_KEY", out openaiApiKey);
+            envVars.TryGetValue("AWS_POLLY_ACCESS_KEY", out awsPollyAccessKey);
+            envVars.TryGetValue("AWS_POLLY_SECRET_KEY", out awsPollySecretKey);
+
+            // Initialize OpenAI API
+            openai = new OpenAIApi(openaiApiKey);
+        }
 
         private void Update()
         {
@@ -152,7 +172,7 @@ namespace OpenAI
             string response = await GetVoiceResponse(text);
             if (!string.IsNullOrEmpty(response))
             {
-                var credentials = new BasicAWSCredentials("AKIAVY6OVFX3NGVFWM77", "oj2ny14Ja+pbo3HhZyBCx/i/h8SF3Tbfgz4+ol3p");
+                var credentials = new BasicAWSCredentials(awsPollyAccessKey, awsPollySecretKey);
                 var client = new AmazonPollyClient(credentials, RegionEndpoint.USEast1);
 
                 var request = new SynthesizeSpeechRequest()
